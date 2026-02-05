@@ -1,0 +1,130 @@
+---
+title: "Data Visualization Final Project Milestone 2"
+author: Henry Oliver
+date: February 4, 2026
+format: html
+
+---
+
+```{r}
+suppressPackageStartupMessages({
+  library(here)
+  library(tidyverse)
+  library(janitor)
+})
+```
+
+```{r}
+water <- read_csv(here("data/AQUASTAT Dissemination System.csv"), show_col_types = FALSE) %>% 
+  clean_names()
+```
+
+```{r}
+# Pivot data wider to get variables out of "variable" column and into their own
+water_wider <- water %>% 
+  pivot_wider(names_from = variable, values_from = value,
+              id_cols = c(area, year)) %>% 
+  clean_names()
+
+```
+
+Units of variables of interest:
+
+ - Population: 1000s of people
+ - Agricultural water withdrawal: 10^9 m3/year
+ - Precipitation: 10^9 m3/year
+```{r}
+# 8 countries with highest (withdrawal for agriculture):(precipitation) ratio for 2020
+top_countries <- water_wider %>%
+  filter(year == 2020) %>% # Top 10 in 2020
+  # Create 'stress_ratio' column. Contains ratio of ag withdrawal / precipitation
+  mutate(stress_ratio = agricultural_water_withdrawal / long_term_average_annual_precipitation_in_volume) %>%
+  slice_max(stress_ratio, n = 8) %>% # Top 8 Countries
+  pull(area)
+
+plot1 <- water_wider %>%
+  filter(area %in% top_countries) %>% # Filter for top_countries
+  # Calculate stress_ratio again
+  mutate(stress_ratio = agricultural_water_withdrawal / long_term_average_annual_precipitation_in_volume) %>%
+  ggplot(aes(x = year, y = stress_ratio, color = area)) +
+  geom_line() +
+  scale_color_brewer(palette = "Set2") +  # set categorical color palette
+  labs(y = "Ag Withdrawal / Precipitation", 
+       title = "Agricultural Water Stress Over Time") +
+  theme_minimal()
+
+plot1
+```
+This figure tries to highlight countries that have the highest ratio of water withdrawals for agriculture:precipitation, and changes in that ratio over time. As expected, these are very arid areas - primarily in the middle east. Our clear outliers are Bahrain and Egypt
+
+```{r}
+#| warning: FALSE
+plot2 <- water_wider %>%
+  mutate(stress_ratio = agricultural_water_withdrawal / long_term_average_annual_precipitation_in_volume) %>%
+  ggplot(aes(x = stress_ratio, color = factor(year))) +
+  geom_density() +
+  scale_x_log10() +
+  labs(x = "Ag Withdrawal / Precipitation", y = "Density", color = "Year",
+       title = "Distribution of Agricultural Water Stress Over Time")
+
+plot2
+```
+Plot 2 shows distribution of agricultural water withdrawal to precipitation ratios across countries from 1999 to 2022. Each curve shows the distribution for a single year, with a log scale used to handle the wide range of ratios across countries. The peaks shifting right over time suggest countries are using more water for agriculture relative to their rainfall, indicating increasing water stress.
+
+
+```{r}
+#| warning: FALSE
+# Create plot showing global trends in sources of water stress
+
+plot3 <- water_wider %>%
+  group_by(year) %>%
+  # Calculate averages of water stress source per year
+  summarise(avg_ag = mean(sdg_6_4_2_agricultural_sector_contribution_to_water_stress, na.rm = TRUE),
+            avg_municipal = mean(sdg_6_4_2_municipal_sector_contribution_to_water_stress, na.rm = TRUE),
+            avg_industrial = mean(sdg_6_4_2_industrial_sector_contribution_to_water_stress, na.rm = TRUE)) %>%
+  pivot_longer(cols = c(avg_ag, avg_municipal, avg_industrial),
+               names_to = "sector", 
+               values_to = "stress") %>%
+  ggplot(aes(x = year, y = stress, color = sector)) +
+  geom_line() +
+  labs(y = "Average Water Stress", color = "Sector") +
+  theme_minimal()
+
+plot3
+```
+
+```{r}
+# Create plot showing global trends in sources of water stress
+plot4 <- water_wider %>%
+  group_by(year) %>%
+  # Calculate averages of water stress source per year
+  summarise(avg_ag = mean(sdg_6_4_2_agricultural_sector_contribution_to_water_stress, na.rm = TRUE),
+            avg_municipal = mean(sdg_6_4_2_municipal_sector_contribution_to_water_stress, na.rm = TRUE),
+            avg_industrial = mean(sdg_6_4_2_industrial_sector_contribution_to_water_stress, na.rm = TRUE)) %>%
+  pivot_longer(cols = c(avg_ag, avg_municipal, avg_industrial),
+               names_to = "sector", 
+               values_to = "stress") %>%
+  ggplot(aes(x = year, y = stress, fill = sector)) +
+  geom_area() +
+  scale_fill_manual(values = c("avg_ag" = "#6fae72", 
+                                "avg_municipal" = "#23babd", 
+                                "avg_industrial" = "#494949")) +
+  labs(y = "Average Water Stress", fill = "Sector",
+       title = "Global Water Stress by Sector") +
+  theme_minimal()
+plot4
+```
+
+
+1. What have you learned about your data? Have any potentially interesting patterns emerged? Point to specific visualizations that you created as you describe your findings.
+
+  I'm very interested to see that in the distribution of water stress over time shows that the ratio of agricultural withdrawals/precpitation is increasing so noticeably over 25 years. I am surprised by how much higher water stress is in Egypt and Bahraine compared to other countries in my data sample - and how close the other 6 top countries are. Interesting that agricultural water stress is declining in these areas generally, but increasing worldwide. 
+
+2. In FPM #1, you outlined some questions that you wanted to answer using these data. Have you made any strides towards answering those questions? If yes, how so? If no, what next steps do you need to take (e.g. I need to create X plot type, I still need to track down Y data, I need to restructure existing data so that you can visualize it in Z ways, etc.)? Have any new questions emerged?
+
+  I have decided that I will not necessarily need to include data on water policies in my info-graphic - potentially something like large-scale UN water protocol timelines can be included if I see big shifts across many countries in a single figure - but that will just be a vertical line indicating the year a policy came into action. I do not want to do lots of policies for lots of countries. I need to really figure out what my geographic scope should be - because I would like to make a map - this will also mean that I will need a shapefile of the world's countries. I will also potentially need some data on which countries are within arid environments / desert latitudes. I am taking strides by determining my variables of interest, and determining that the FAO data already has precipitation!
+
+
+3. What challenges do you foresee encountering with your data? These can be data wrangling and / or visualization challenges.
+
+  I think it's going to be tough to make visualizations for global data. I need to figure out what geographic region to focus on to have the most impactful visuals. I also think it will be relativley difficult to find super interesting trends in my water data - so far it's been pretty dry (HA). 
