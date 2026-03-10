@@ -60,16 +60,168 @@ This figure tries to highlight countries that have the highest ratio of water wi
 ```{r}
 #| warning: FALSE
 plot2 <- water_wider %>%
+  filter(area %in% top_countries) %>% 
   mutate(stress_ratio = agricultural_water_withdrawal / long_term_average_annual_precipitation_in_volume) %>%
   ggplot(aes(x = stress_ratio, color = factor(year))) +
   geom_density() +
-  scale_x_log10() +
+ # scale_x_log10() +
   labs(x = "Ag Withdrawal / Precipitation", y = "Density", color = "Year",
-       title = "Distribution of Agricultural Water Stress Over Time")
+       title = "Distribution of Agricultural Water Stress Over Time") +
+    # The "Professional" Theme Adjustments
+  theme_minimal() +
+  theme(
+    # 1. Remove vertical grid lines (cleaner look)
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank(),
+    
+    # 2. Lighten horizontal grid lines so they don't compete with the data
+    panel.grid.major.y = element_line(color = "grey92"),
+    
+    # 3. Anchor the plot with a solid X-axis line
+    axis.line.x = element_line(color = "black", linewidth = 0.5),
+    
+    # 4. Refine Text Hierarchy
+    plot.title = element_text(face = "bold", size = 16),
+    plot.subtitle = element_text(size = 11, color = "grey40", margin = margin(b = 15)),
+    plot.caption = element_text(size = 8, color = "grey60", hjust = 0),
+    
+    # 5. Legend placement on the right
+    legend.position = "right",
+    legend.title = element_text(face = "bold"),
+    
+    # 6. Add some breathing room
+    plot.margin = margin(20, 20, 20, 20)
+  )
 
-plot2
+plot2 + 
+  scale_color_viridis_d(option = "mako", begin = 0.9, end = 0.3) 
 ```
 Plot 2 shows distribution of agricultural water withdrawal to precipitation ratios across countries from 1999 to 2022. Each curve shows the distribution for a single year, with a log scale used to handle the wide range of ratios across countries. The peaks shifting right over time suggest countries are using more water for agriculture relative to their rainfall, indicating increasing water stress.
+
+```{r}
+plot2_a <- water_wider %>%
+  filter(area %in% top_countries) %>% 
+  mutate(stress_ratio = agricultural_water_withdrawal / long_term_average_annual_precipitation_in_volume) %>%
+  filter(!is.na(stress_ratio), is.finite(stress_ratio), stress_ratio > 0) %>%
+  group_by(year) %>%
+  filter(n() > 1) %>%
+  ungroup() %>%
+  ggplot(aes(x = stress_ratio, y = factor(year), fill = factor(year))) + 
+  ggridges::geom_density_ridges(
+    alpha = 0.8,         # Slightly higher alpha looks great with mako
+    rel_min_height = 0.01, 
+    scale = 3            # Adjust scale to control overlap
+  ) +
+ # scale_x_log10() +
+  # Add the mako palette here
+  scale_fill_viridis_d(option = "mako", direction = -1) + 
+  theme_ridges() + 
+  labs(
+    title = "Distribution of Agricultural Water Stress",
+    x = "Ag Withdrawal / Precipitation (log scale)",
+    y = "Year",
+    fill = "Year"
+  ) +
+  # Optional: Hide the legend since the y-axis already labels the years
+  theme(legend.position = "none")
+
+plot2_a
+```
+```{r}
+library(scales)
+
+plot2_pro <- water_wider %>%
+  filter(area %in% top_countries) %>% 
+  mutate(stress_ratio = agricultural_water_withdrawal / long_term_average_annual_precipitation_in_volume) %>%
+  ggplot(aes(x = stress_ratio, color = factor(year))) +
+  # Use a slightly thicker line (linewidth) for better color visibility
+  geom_density(linewidth = 1, alpha = 0.8) +
+  
+  # Professional Scales
+  scale_x_log10(labels = scales::label_comma()) +
+  scale_color_viridis_d(option = "mako", begin = 0.9, end = 0.3) +
+  
+  # Clear and descriptive labels
+  labs(
+    title = "Agricultural Water Stress Over Time in Arid Regions",
+    subtitle = "Distribution of the ratio between agricultural withdrawal and annual precipitation\nin top 10 countries with most water stress",
+    x = "Ag Withdrawal / Precipitation (Log Scale)",
+    y = "Density",
+    color = "Year",
+    caption = "Source: AQUASTAT Database"
+  ) +
+  
+  # The "Professional" Theme Adjustments
+  theme_minimal() +
+  theme(
+    # 1. Remove vertical grid lines (cleaner look)
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank(),
+    
+    # 2. Lighten horizontal grid lines so they don't compete with the data
+    panel.grid.major.y = element_line(color = "grey92"),
+    
+    # 3. Anchor the plot with a solid X-axis line
+    axis.line.x = element_line(color = "black", linewidth = 0.5),
+    
+    # 4. Refine Text Hierarchy
+    plot.title = element_text(face = "bold", size = 16),
+    plot.subtitle = element_text(size = 11, color = "grey40", margin = margin(b = 15)),
+    plot.caption = element_text(size = 8, color = "grey60", hjust = 0),
+    
+    # 5. Legend placement on the right
+    legend.position = "right",
+    legend.title = element_text(face = "bold"),
+    
+    # 6. Add some breathing room
+    plot.margin = margin(20, 20, 20, 20)
+  )
+
+plot2_pro
+```
+
+```{r}
+library(scales)
+
+plot2_clean <- water_wider %>%
+  filter(area %in% top_countries) %>% 
+  mutate(stress_ratio = agricultural_water_withdrawal / long_term_average_annual_precipitation_in_volume) %>%
+  # Filter for your specific year range
+  filter(year >= 1999, year <= 2022) %>%
+  # Use 'year' as a numeric value, NOT a factor
+  ggplot(aes(x = stress_ratio, color = year, group = year)) +
+  geom_density(linewidth = 1) +
+  # Return to log scale if you prefer the 'un-squashed' look
+  scale_x_log10(labels = scales::label_comma()) + 
+  
+  # Use scale_color_viridis_c ('c' for continuous)
+  scale_color_viridis_c(
+    option = "mako", 
+    begin = 0.9, 
+    end = 0.3,
+    breaks = seq(2000, 2022, by = 5) # Labels every 5 years on the bar
+  ) +
+  
+  labs(
+    title = "Agricultural Water Stress Over Time",
+    subtitle = "Transition from 1999 (light) to 2022 (dark)",
+    x = "Ag Withdrawal / Precipitation (Log Scale)",
+    y = "Density",
+    color = "Year"
+  ) +
+  
+  theme_minimal() +
+  theme(
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank(),
+    axis.line.x = element_line(color = "black"),
+    # This makes the color bar legend look sleek and professional
+    legend.key.width = unit(1.2, "cm"),
+    legend.position = "right"
+  )
+
+plot2_clean
+```
 
 
 ```{r}

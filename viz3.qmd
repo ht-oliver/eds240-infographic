@@ -1,0 +1,136 @@
+---
+title: "viz3"
+format: html
+---
+
+```{r}
+library(tidyverse)
+library(janitor)
+library(here)
+library(waffle)
+```
+
+
+```{r}
+water <- read_csv(here("data/aquastat_asia.csv"), show_col_types = FALSE) %>% 
+  clean_names()
+
+my_tan <- "#D6B588"
+```
+
+```{r}
+# Pivot data wider to get variables out of "variable" column and into their own
+water_wider <- water %>% 
+  pivot_wider(names_from = variable, values_from = value,
+              id_cols = c(area, year)) %>% 
+  clean_names()
+
+```
+
+```{r}
+library(sf)
+
+world <- st_read(here("data/countries/ne_50m_admin_0_countries.shp")) %>% 
+  clean_names()
+asia <- world[world$continent == "Asia", ] %>% 
+  select("admin", "geometry")
+```
+
+
+```{r}
+water_wider$area[water_wider$area == "Türkiye"] <- "Turkey"
+water_wider$area[water_wider$area == "Iran (Islamic Republic of)"] <- "Iran"
+water_wider$area[water_wider$area == "Syrian Arab Republic"] <- "Syria"
+unique(water_wider$area)
+
+
+```
+
+```{r}
+#| hide: True
+#| echo: False
+#| include: False
+common_countries <- intersect(water_wider$area, asia$admin)
+
+asia_clean <- asia %>%
+  filter(admin %in% common_countries)
+
+water_clean <- water_wider %>%
+  filter(area %in% common_countries)
+
+asia_joined <- asia_clean %>%
+  left_join(water_clean, by = c("admin" = "area"))
+```
+
+
+```{r}
+# Saudi Arabia: Water Withdrawals vs Precipitation — Waffle Charts
+# install.packages("waffle", repos = "https://cinc.rud.is/drat/")
+
+library(waffle)
+library(dplyr)
+library(gridExtra)
+
+sa <- asia_joined |>
+  filter(admin == "Iran", year == 2020)
+
+agri   <- sa$agricultural_water_withdrawal
+indus  <- sa$industrial_water_withdrawal
+muni   <- sa$municipal_water_withdrawal
+precip <- sa$long_term_average_annual_precipitation_in_volume
+total_withdrawal <- agri + indus + muni
+
+cell_volume <- total_withdrawal / 100
+precip_cells <- round(precip / cell_volume)
+
+w_counts <- round(c(agri, indus, muni) / cell_volume)
+w_counts[1] <- w_counts[1] + (100 - sum(w_counts))
+
+colours <- c(
+  "Agricultural"  = "#C8892A",
+  "Industrial"    = "grey40",
+  "Municipal"     = "#4A7B9D",
+  "Precipitation" = "#7EB8D4"
+)
+
+withdrawal_vec <- c(
+  "Agricultural" = w_counts[1],
+  "Industrial"   = w_counts[2],
+  "Municipal"    = w_counts[3]
+)
+precip_vec <- c("Precipitation" = precip_cells)
+
+p1 <- waffle(precip_vec,
+             rows   = 20,
+             colors = colours["Precipitation"],
+             title  = sprintf("Annual Precipitation  (%.2f km³)", precip),
+             xlab   = sprintf("1 square = %.4f km³", cell_volume))
+
+p2 <- waffle(withdrawal_vec,
+             rows   = 10,
+             colors = colours[names(withdrawal_vec)],
+             title  = sprintf("Total Water Withdrawal  (%.2f km³)", total_withdrawal),
+             xlab   = sprintf("1 square = %.4f km³", cell_volume))
+
+grid.arrange(p1, p2, ncol = 2, widths = c(4, 1))
+```
+```{r}
+p1 <- waffle(precip_vec,
+             rows = 20,
+             colors = colours["Precipitation"],
+             legend_pos = "none",
+             pad = 1,
+             size = 0.5)
+
+p2 <- waffle(withdrawal_vec,
+             rows = 10,
+             colors = colours[names(withdrawal_vec)],
+             legend_pos = "none",
+             pad = 1,
+             size = 0.5)
+
+p1
+p2
+
+```
+
