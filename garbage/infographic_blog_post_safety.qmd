@@ -12,7 +12,7 @@ code-fold: true
 Imagine trying to run a farm, power cities, and supply millions of people with water—while living in one of the driest regions on Earth. This is the reality for countries across the Near East and North Africa (NENA). As climate change intensifies heat and drought, water scarcity is becoming an even more pressing challenge. While researching groundwater decline in arid regions across the globe, I became curious about a bigger question: How has water use in our most water-limited regions changed over the past two decades? To investigate, I used the FAO’s AQUASTAT database to create an infographic exploring trends in water withdrawals and how they compare to the region’s limited renewable freshwater supplies.
 
 ```{r}
-knitr::include_graphics("eds240_final_viz.png")
+knitr::include_graphics("eds230_final_viz.png")
 ```
 
 ## Design Journey
@@ -38,7 +38,32 @@ My first step was deciding what data to use. I knew I was interested in large-sc
   My plot themes are very minimal, and they follow my color scheme - desert oasis. I used AI to help me with theme syntax, but I wanted everything to be stripped down. I used the Mako viridis color palette, and a sandy brown background (added in Affinity) to give the vibe of water in the desert. I think it looks refreshing. I made sure my color palettes don't have hues that are too similar, and that the figure can still be interpreted somewhat in black and white. I also avoided using and red or green.
   My font size, color, and positioning was very purposeful. Interpretations are written in futura, while and investigating questions are in PT Sans Caption. I tried to lay it out so that the reader reads the infographic from top to bottom, and then goes back to read small annotations in italics. I think that middle of my map and line graph figures get pretty busy, but the trend is clear and that's the most important bit. Most importantly, I wanted to show my agricultural trend, show the conflicting trend, and then contextualize both. I contextualized my data with a brief description at the beginning, and then use my last figure to help visualize my findings at the end. I also use a map to show my region in the top right.
   My primary message is that agricultural water use is changing, but water stress remains high - this is all present in the logical flow of the document. This specific interpretation is kinda off too the side, but my two conflicting trends are dead center of the infographic.
-  I didn't much of an effort to bring historical or cultural context to my display. I wanted to make sure that my analysis doesn't come across as critical or negative - but I am highlighting a sustainability concern. I avoided terms like "water stress" and tried to avoid the viewer conclusion that people in this area are "using too much water". I strove to avoid negativity by having a warm tone in my final graphic, and addressing the affects of regional climate and climate change.
+  I didn't much of an effort to bring historical or cultural context to my display. I wanted to make sure that my analysis doesn't come across as critical or negative - but I am highlighting a sustainability concern. I avoided terms like "water stress" and tried to avoid the viewer conclusion that people in this area are "using too much water". Part of this do this by having a warm tone in my final graphic, and addressing the affects of regional climate and climate change.
+
+7) contextualizing your data
+
+ 
+
+8) centering your primary message
+
+
+
+
+
+9) considering accessibility (e.g. colorblind-friendly palettes / contrast, alt text)
+
+
+
+
+applying a DEI lens to your design, as appropriate (e.g. considering the people / communities / places represented in your data, consider how you frame your questions / issue)
+
+
+
+<!-- -->
+
+10) applying a DEI lens to your design, as appropriate (e.g. considering the people / communities / places represented in your data, consider how you frame your questions / issue)
+
+
 
 # Code
 
@@ -51,11 +76,10 @@ library(waffle)
 library(sf)
 library(ggspatial)
 library(ggrepel)
-library(patchwork)
 })
 
 ## Reading in Aquastat Data
-water <- read_csv(here("data/aquastat_nena.csv"), show_col_types = FALSE) %>% 
+water <- read_csv(here("posts/water_scarcity_nena/data/aquastat_nena.csv"), show_col_types = FALSE) %>% 
   clean_names() 
 
 ## Cleaning Aquastat Data
@@ -65,7 +89,7 @@ water_wider <- water %>%
   clean_names()
 
 ## Reading in map data
-world <- st_read(here("data/countries/ne_50m_admin_0_countries.shp"), quiet = TRUE) %>% 
+world <- st_read(here("posts/water_scarcity_nena/data/countries/ne_50m_admin_0_countries.shp"), quiet = TRUE) %>% 
   clean_names()
 # Filter and select
 nena_region <- world %>%
@@ -414,6 +438,233 @@ combined <- resources_waffle / withdrawals_waffle +
 
 combined
 ```
+
+## Read in Aquastat Data
+
+```{r}
+
+  
+```
+
+## Clean Aquastat Data
+
+```{r}
+
+```
+
+## Read in Map Data
+
+```{r}
+#| message: False
+
+```
+
+## Clean and Join Map Data
+
+```{r}
+
+
+```
+
+### Map of NENA Area
+
+```{r}
+
+
+ggsave("ref_map.png", ref_map, bg = "transparent", width = 8, height = 6, dpi = 300)
+```
+
+## Map for agriculture 2000
+
+```{r}
+
+
+
+ggsave("ag_2000.png", ag_2000, bg = "transparent", width = 10, height = 6, dpi = 300)
+
+```
+
+## Map for agriculture 2020
+
+```{r}
+
+
+
+
+ggsave("ag_2020.png", ag_2020, bg = "transparent", width = 10, height = 6, dpi = 300)
+
+```
+
+## Agriculture Trend 2000-2020
+
+```{r}
+
+
+# Trend lines for select NENA countries (2000-2022)
+ag_trend <- water_nena %>%
+  filter(area %in% c("Saudi Arabia", "Iraq", "Iran", "Egypt", "Kuwait", "Mauritania")) %>%
+  filter(year >= 2000 & year <= 2022) %>%
+  ggplot(aes(x = year, y = agricultural_water_withdrawal_per_capita, color = area)) +
+  geom_line(linewidth = 2) +
+  scale_color_manual(values = c("grey40", "white", "#2A9D8F", "#457B9D", "#A8DADC", "black")) +
+  scale_x_continuous(expand = expansion(mult = c(0.1, 0.1))) +
+  theme_minimal() +
+  theme(
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank(),
+    panel.grid.major.y = element_line(color = alpha("white", 0.3)),
+    panel.background = element_rect(fill = NA, color = NA),
+    plot.background = element_rect(fill = NA, color = NA),
+    axis.text = element_text(color = "white", size = 24),
+    axis.ticks.x = element_line(color = "white"),
+    axis.line.x = element_blank(),
+    legend.position = "right",
+    legend.text = element_text(color = "white", size = 20),
+    legend.key = element_rect(fill = NA)
+  ) +
+  labs(x = NULL, y = NULL, color = NULL)
+
+# Save as transparent PNG
+ggsave("ag_trend.png", ag_trend, bg = "transparent", width = 10, height = 6, dpi = 300)
+```
+
+## Map for Water Stress 2000
+
+```{r}
+
+
+
+ggsave("stress_2000_log.png", stress_2000_log, bg = "transparent", width = 10, height = 6, dpi = 300 )
+```
+
+## Map for Water Stress 2020
+
+```{r}
+
+
+ggsave("stress_2020_log.png", stress_2020_log, bg = "transparent", width = 10, height = 6, dpi = 300 )
+```
+
+## Water Stress Trends 2000-2020
+
+```{r}
+
+# Save as transparent PNG
+ggsave("log_trend.png", log_trend, bg = "transparent", width = 10, height = 6, dpi = 300)
+```
+
+## Waffle Charts for Resources vs Withdrawals
+
+```{r}
+
+library(patchwork)
+
+# Save number of gallons in available resources
+res_val <- water_nena %>%
+  filter(year == 2020) %>%
+  summarise(total = sum(total_renewable_water_resources, na.rm = TRUE)) %>%
+  pull(total) %>%
+  .[1]
+
+# Ag value
+ag_val <- water_nena %>%
+  filter(year == 2020) %>%
+  summarise(total = sum(agricultural_water_withdrawal, na.rm = TRUE)) %>%
+  pull(total) %>%
+  .[1]
+
+# Municipal value
+mun_val <- water_nena %>%
+  filter(year == 2020) %>%
+  summarise(total = sum(municipal_water_withdrawal, na.rm = TRUE)) %>%
+  pull(total) %>%
+  .[1]
+
+# Industrial value
+ind_val <- water_nena %>%
+  filter(year == 2020) %>%
+  summarise(total = sum(industrial_water_withdrawal, na.rm = TRUE)) %>%
+  pull(total) %>%
+  .[1]
+
+# Waffle chart for total available resources
+# Total withdrawals are 370 billion cubic meters - 1 square should equal 2 billion cubic meters
+resources_waffle <- ggplot(data.frame(values = round(res_val/2),
+                                      label = "Resources"),
+       aes(fill = label, values = values)) +
+  geom_waffle(n_rows = 10, color = "white") +
+  scale_fill_manual(values = c("Resources" = "#2a788e")) +
+  coord_equal() +
+  theme_void() +
+  theme(legend.position = "bottom") +
+  theme(
+  legend.position = "bottom",
+  plot.background = element_rect(fill = my_tan, color = NA)
+)
+
+# Waffle chart for withdrawals by sector. Total is 443 billion cubic meters - same square size
+withdrawals_waffle <- tibble(
+  label = c("Agricultural", "Municipal", "Industrial"),
+  values = c(round(ag_val/2), round(mun_val/2), round(ind_val/2))
+) %>%
+  ggplot(aes(fill = label, values = values)) +
+  geom_waffle(n_rows = 10, color = "white") +
+  scale_fill_manual(values = c("Agricultural" = "#22a884", "Municipal" = "#388AA6", "Industrial" = "grey60")) +
+  coord_equal() +
+  theme_void() +
+  theme(legend.position = "right") +
+  theme(
+  legend.position = "right",
+  plot.background = element_rect(fill = my_tan, color = NA)
+)
+
+resources_waffle + withdrawals_waffle
+
+
+```
+
+
+```{r}
+max_squares <- 22 * 10  # 220 total squares
+
+resources_waffle <- tibble(
+  label = c("Resources", "Empty"),
+  values = c(round(res_val / 2), max_squares - round(res_val / 2))
+) %>%
+  ggplot(aes(fill = label, values = values)) +
+  geom_waffle(n_rows = 5, color = "white", size = 0.5) +
+  scale_fill_manual(values = c("Resources" = "#C2ECD7", "Empty" = "transparent")) +
+  coord_equal() +
+  theme_void() +
+  theme(
+    legend.position = "none",
+    plot.background = element_rect(fill = NA, color = NA),
+    panel.background = element_rect(fill = NA, color = NA)
+  )
+
+withdrawals_waffle <- tibble(
+  label = c("Agricultural", "Municipal", "Industrial", "Empty"),
+  values = c(round(ag_val / 2), round(mun_val / 2), round(ind_val / 2),
+             max_squares - round(ag_val / 2) - round(mun_val / 2) - round(ind_val / 2))
+) %>%
+  ggplot(aes(fill = label, values = values)) +
+  geom_waffle(n_rows = 5, color = "white", size = 0.5) +
+  scale_fill_manual(values = c("Agricultural" = "#22a884", "Municipal" = "#388AA6",
+                               "Industrial" = "grey60", "Empty" = "transparent")) +
+  coord_equal() +
+  theme_void() +
+  theme(
+    legend.position = "none",
+    plot.background = element_rect(fill = NA, color = NA),
+    panel.background = element_rect(fill = NA, color = NA)
+  )
+
+combined <- resources_waffle / withdrawals_waffle +
+  plot_annotation(theme = theme(plot.background = element_rect(fill = NA, color = NA)))
+
+ggsave("waffles.png", combined, bg = "transparent", width = 10, height = 4, dpi = 300)
+```
+
 
 ## Sources
 

@@ -4,7 +4,7 @@
 This project investigates trends in water scarcity across the Near East and North Africa (NENA) region using data from the Food and Agriculture Organization’s FAO AQUASTAT. The goal of the analysis is to explore how water withdrawals—particularly for agriculture—have changed from 2000 to 2020 and how these withdrawals compare to the region’s available renewable freshwater resources.
 The results of this analysis are synthesized into an infographic designed to communicate regional trends in agricultural water use and water stress to a broad audience. This repository contains the data processing workflow, visualization code, and supporting materials used to produce figures featured in the final infographic.
 
-![Water Scarcity Infographic](eds230_final_viz.png)
+![Water Scarcity Infographic](eds240_final_viz.png)
 
 ## Contents
 
